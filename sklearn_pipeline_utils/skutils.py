@@ -12,6 +12,11 @@ from sklearn.preprocessing import LabelBinarizer
 
 
 def ColumnExtracter(columns):
+	'''
+	params :
+
+	columns		list of strings, column names to extract
+	'''
 	def extractColumns(X, columns):
 		return X[columns]
 	return FunctionTransformer(
@@ -24,7 +29,22 @@ def ColumnExtracter(columns):
 # Imputer
 
 class CustomImputer(BaseEstimator, TransformerMixin):
+	'''
+	A wrapper over the sklearn.preprocessing.Imputer to handle all kinds of data
+	'''
 	def __init__(self, strategy='mean', filler='NA'):
+		'''
+		params :
+
+		strategy 	mean - imputes with mean of the column values, numerical values required
+					median - imputes with median of the column values, numerical values required
+					mode - imputes with mode of the column values
+					strategy - imputed with the provided or default fill value
+
+		filler		can be a sigle value, string or number
+					list of values whose length is equal to the number of columns can be provided
+					which are used to impute each column
+		'''
 		self.strategy = strategy
 		self.fill = filler
 
@@ -44,7 +64,7 @@ class CustomImputer(BaseEstimator, TransformerMixin):
 		return self
 
 	def transform(self, X, y=None):
-		if isinstance(self.fill, type(None)):
+		if self.fill is None:
 			self.fill = 'NA'
 		return X.fillna(self.fill)
 
@@ -52,6 +72,14 @@ class CustomImputer(BaseEstimator, TransformerMixin):
 # ColumnsEqualityChecker
 
 def ColumnsEqualityChecker(result_column='equality_col', inverse=False):
+	'''
+	checks if values in each row across columns are the same
+
+	params:
+
+	result_column	column name of the result column
+	inverse			apply a not function to the result, checks inequality
+	'''
 	def equalityChecker(X, result_column, inverse=False):
 		def roweq(row):
 			eq = all(row.values == row.values[0])
@@ -70,9 +98,20 @@ def ColumnsEqualityChecker(result_column='equality_col', inverse=False):
 # CustomMapper
 
 def CustomMapper(result_column='mapped_col', value_map={}, default=np.nan):
-	def mapper(X, result_column, value_map, default):       
+	'''
+	maps the values of the columns accroding to given mapping
+
+	params:
+
+	result_column	name of the resulting column, suffixed _n if more than a
+					column is returned
+
+	value_map		dict with the mapping of col_value: to_be_mapped_value
+
+	default			default mapped_value for column values not in value_map
+	'''
+	def mapper(X, result_column, value_map, default):
 		def colmapper(col):
-			print col.name
 			return col.apply(lambda x: value_map.get(x, default))
 		mapped_col = X.apply(colmapper).values
 		mapped_col_names = [result_column + '_' + str(i) for i in range(mapped_col.shape[1])]
@@ -87,6 +126,13 @@ def CustomMapper(result_column='mapped_col', value_map={}, default=np.nan):
 # Column Sum
 
 def ColumnsSum(result_column='sum_col'):
+	'''
+	returns sum of dataframe row by row
+
+	params:
+
+	result_column	name of the result column
+	'''
 	def colSum(X, result_column):
 		return pd.DataFrame(X.sum(axis=1), columns=[result_column])
 	return FunctionTransformer(
@@ -99,6 +145,13 @@ def ColumnsSum(result_column='sum_col'):
 
 
 def ColumnsLabelBinarizer(columns):
+	'''
+	wrapper over the sklearn.preprocessing.LabelBinarizer to handle categorical data
+
+	params:
+
+	columns 	names of columns to LabelBinarize
+	'''
 	return DataFrameMapper(
 		[(col, LabelBinarizer()) for col in columns],
 		df_out=True,
@@ -110,6 +163,16 @@ def ColumnsLabelBinarizer(columns):
 
 
 def ColumnValueToBoolean(positive_string, inverse=False):
+	'''
+	To check if the value of the column equals a specific value, returns a binarized column with the truth value
+
+	params:
+
+	positive_string		value to look for in the columns
+
+	inverse				apply a not operation to the result, can be used to extract all the values not equal to a
+						specific value in the column
+	'''
 	def valueToBoolean(X, positive_string, inverse=False):
 		result = (X == positive_string)
 		if inverse:
@@ -127,8 +190,22 @@ def ColumnValueToBoolean(positive_string, inverse=False):
 # DataFramePrinter
 
 
-def DataFramePrinter():
+def DataFramePrinter(columns_only=False, shape_only=False):
+	'''
+	A util to print dataframe details in the middle of a pipeline
+
+	params:
+
+	columns_only	print only the column names
+
+	shape_only		print only the shape of the dataframe
+	'''
 	def dfprinter(X):
-		print X.head()
+		if columns_only:
+			print X.columns
+		elif shape_only:
+			print X.shape
+		else:
+			print X.head()
 		return X
 	return FunctionTransformer(dfprinter, validate=False)

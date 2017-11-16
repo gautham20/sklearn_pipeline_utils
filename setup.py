@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='sklearn_pipeline_utils',
-	version=0.1,
+	version='0.1.3',
 	description='custom transformers for sklearn pipeline to make life easier',
 	url='https://github.com/gautham20/sklearn_pipeline_utils',
 	author='gautham20',
